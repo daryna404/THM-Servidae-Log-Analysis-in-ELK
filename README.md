@@ -33,6 +33,7 @@ I identified the IP address **84.237.252.156**, which stood out as a potential C
 
   **3.Examining Frequent Processes:**
 Next, I looked at the process.name field to see which processes were most frequently running on Bill’s workstation. This helped me identify suspicious activity linked to the attack. The frequent execution of **curl.exe** could be suspicious, as it may indicate the attacker is using it to interact with external servers, such as for downloading malicious payloads or sending stolen data. Therefore, it is a key piece of evidence suggesting malicious activity.
+
 <img width="147" alt="image" src="https://github.com/user-attachments/assets/217b6878-7c8b-44e4-a5d3-cf1ac62d3921" />
 
 
@@ -156,13 +157,12 @@ An early sign of lateral movement in this scenario is found in the log event whe
 
 The ping command tests connectivity between devices via the ICMP protocol. Although not inherently malicious, it suggests reconnaissance when viewed alongside other suspicious activity. The target, payroll.servidae.internal, is an internal payroll tool, likely containing sensitive information.
 
-Lateral Movement: Accessing Internal Resources
-
+  **2.Lateral Movement: Accessing Internal Resources**
 To analyze the attack further, the time range in Kibana was adjusted to start at May 11, 2023 @ 18:57:30.000. This revealed several curl requests targeting the internal payroll system at:
 
 ![image](https://github.com/user-attachments/assets/e250b20f-66ac-4726-bd9f-b0fec174a943)
 
-Filtering Logs
+  **3.Filtering Logs**
 
 Using the following Kibana Query Language (KQL) query, unnecessary repeating logs were excluded to focus on relevant curl events:
 
@@ -170,7 +170,7 @@ Using the following Kibana Query Language (KQL) query, unnecessary repeating log
 
 This query filters logs for processes using curl.exe but excludes those related to the attacker's "beacon" backdoor. The refined logs revealed that the attacker attempted to brute-force login credentials.
 
-Internal Server Brute-Force
+  **4.Internal Server Brute-Force**
 
 The logs show a brute-force attack against the payroll server, with repeated login attempts using the bsmith username and incrementing password attempts (e.g., password=Pass3, password=Pass4). The development team confirmed that successful logins generate a session cookie (PHPSESSID). Using the query:
 
@@ -180,9 +180,9 @@ The logs show a brute-force attack against the payroll server, with repeated log
 
 ![image](https://github.com/user-attachments/assets/548bae6e-8fd7-4dc3-8333-b29413e73a44)
 
-We identified two successful logins by the attacker.
+Identified two successful logins by the attacker.
 
-Internal Server Data Exfiltration
+  **5.Internal Server Data Exfiltration**
 
 After authenticating, the attacker accessed sensitive resources on the payroll server. Using the following query:
 
@@ -196,4 +196,4 @@ Three key log events were identified:
 
 Access to /employee-payroll.php, likely containing sensitive payroll data.
 Download of a CSV file named bank-details.csv.
-Use of the FTP command immediately afterward, indicating an attempt to exfiltrate the stolen file.
+The final result in our logs shows that the attacker downloaded a potentially sensitive CSV file after gaining access to the payroll server. It was saved to Bill's desktop, which, if investigated chronologically without the current filters, is immediately followed by the "FTP" (File Transfer Protocol) command, likely to exfiltrate and transfer the stolen document back over to the attacker's system.
